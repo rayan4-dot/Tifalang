@@ -16,10 +16,14 @@ else
 fi
 
 cecho() {
+    color="$1"
+    bold="$2"
+    msg="$3"
     if [ "$HAS_COLOR" = true ]; then
-        echo -e "${1}${2}${NC}"
+        # Use printf for maximum compatibility across shells (zsh/bash/sh)
+        printf "${color}${bold}${msg}${NC}\n"
     else
-        echo "$2"
+        printf "${msg}\n"
     fi
 }
 
@@ -29,18 +33,18 @@ REPO_NAME="Tifalang"
 BRANCH="main"
 # ---------------------
 
-cecho "$GREEN" "$BOLD⛰️  ⵜⴰⵡⵓⵔⵉ ⴰⵙⵏⵉⵏ (Starting TifaLang Universal Setup)..."
+cecho "$GREEN" "$BOLD" "⛰️  ⵜⴰⵡⵓⵔⵉ ⴰⵙⵏⵉⵏ (Starting TifaLang Universal Setup)..."
 
-echo "🌐 Fetching TifaLang from GitHub..."
+printf "🌐 Fetching TifaLang from GitHub...\n"
 curl -fsSL "https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/${BRANCH}/tifa" -o tifa-install
 
 chmod +x ./tifa-install
 
-echo "🛡️  Establishing TifaLang in system paths..."
+printf "🛡️  Establishing TifaLang in system paths...\n"
 sudo ./tifa-install install
 
 rm ./tifa-install
 
-echo ""
-cecho "$GREEN" "$BOLD✓ ⴰⵣⵓⵍ! TifaLang is now natively installed on this laptop."
-echo "Run it anywhere by simply typing: tifa"
+printf "\n"
+cecho "$GREEN" "$BOLD" "✓ ⴰⵣⵓⵍ! TifaLang is now natively installed on this laptop."
+printf "Run it anywhere by simply typing: tifa\n"
