@@ -9,6 +9,8 @@ from compiler import Compiler
 from vm import VM, VMRuntimeError
 from repl import run_repl
 
+VERSION = "1.5.0"
+
 def run(code):
     try:
         tokens = lex(code)
@@ -34,18 +36,16 @@ def run(code):
         sys.exit(1)
 
 def install_system():
-    """Universal Installer logic for any machine."""
+    """Universal Installer logic."""
     target_bin = "/usr/local/bin/tifa"
     target_share = "/usr/local/share/tifalang"
     
-    print("\n⛰️  ⵜⴰⵡⵓⵔⵉ ⴰⵙⵏⵉⵏ (Establishing TifaLang Globally)...")
+    print("\n⛰️  ⵜⴰⵡⵓⵔⵉ ⴰⵙⵏⵉⵏ (Establishing TifaLang System)...")
     
     try:
-        # 1. Ensure system share directory exists
         if not os.path.exists(target_share):
             os.makedirs(target_share, exist_ok=True)
         
-        # 2. Extract internal libraries into system share
         libs = ['ⴰⴼⴰⵢⵍⵓ.tifa', 'ⴰⵎⵣⵉⵔ.tifa', 'ⴰⵎⵙⵏ.tifa']
         for lib in libs:
             data = pkgutil.get_data('tifalang_std', lib)
@@ -54,21 +54,40 @@ def install_system():
                     f.write(data)
                 print(f"  ✓ {lib} distributed.")
         
-        # 3. Copy the executable itself to system path
         current_binary = os.path.realpath(sys.argv[0])
         shutil.copy2(current_binary, target_bin)
         os.chmod(target_bin, 0o755)
         
         print(f"\n✅ ⴰⵣⵓⵍ — TifaLang is now natively established!")
         print(f"Location: {target_bin}")
-        print("You can now run 'tifa' from any path globally.\n")
+        print("Run 'tifa status' to see your ecosystem.\n")
         sys.exit(0)
     except PermissionError:
         print("\n❌ Error: Permission denied. Please use: sudo tifa install")
         sys.exit(1)
     except Exception as e:
-        print(f"\n❌ Error during installation: {e}")
+        print(f"\n❌ Error: {e}")
         sys.exit(1)
+
+def show_status():
+    print(f"\n⛰️  TifaLang Ecosystem Status (v{VERSION})")
+    print("-" * 40)
+    print(f"Binary: {sys.argv[0]}")
+    share = "/usr/local/share/tifalang"
+    if os.path.exists(share):
+        print(f"Libraries: {share}")
+        for f in os.listdir(share):
+            print(f"  - {f}")
+    else:
+        print("Libraries: Not found (Run 'tifa install')")
+    
+    # Check VSCode
+    vscode_ext = os.path.expanduser("~/.vscode/extensions")
+    if os.path.exists(vscode_ext) and any("tifalang" in d.lower() for d in os.listdir(vscode_ext)):
+        print("VSCode Extension: Installed ✅")
+    else:
+        print("VSCode Extension: Not installed (Run 'tifa setup-vscode')")
+    print("-" * 40 + "\n")
 
 def run_cli():
     if len(sys.argv) > 1:
@@ -76,9 +95,11 @@ def run_cli():
         
         if cmd == 'install':
             install_system()
+        elif cmd == 'status':
+            show_status()
         elif cmd == 'new':
             name = sys.argv[2] if len(sys.argv) > 2 else "ⵜⴰⴱⵔⴰⵜ"
-            print(f"Creating new TifaLang project: {name}...")
+            print(f"Creating new project: {name}...")
             os.makedirs(name, exist_ok=True)
             with open(os.path.join(name, "ⴰⵎⵣⵡⴰⵔⵓ.tifa"), "w", encoding="utf-8") as f:
                 f.write('## TifaLang Project\n\nⵙⵙⵓⴼⵖ "ⴰⵣⵓⵍ!"\n')
@@ -88,8 +109,18 @@ def run_cli():
             if len(sys.argv) > 2:
                 filename = sys.argv[2]
             else:
-                print("Usage: tifa run <filename.tifa>")
+                print("Usage: tifa run <file.tifa>")
                 sys.exit(1)
+        elif cmd == 'help' or cmd == '--help' or cmd == '-h':
+            print("\n⛰️  ⵜⵉⴼⴰⵍⴰⵏⴳ (TifaLang) Ecosystem Commands:")
+            print("  run <file.tifa>   - ⵙⵙⵍⴽⵎ ⴰⴼⴰⵢⵍⵓ")
+            print("  new <name>       - ⵙⴽⵔ ⴰⵙⵏⵙⵉ ⴰⵎⴰⵢⵏⵓ")
+            print("  install          - ⵙⴱⴷⴷ ⵜⵉⴼⴰⵍⴰⵏⴳ ⴳ ⵓⵏⴳⵔⴰⵡ")
+            print("  status           - ⵥⵔ ⴰⴷⴷⴰⴷ ⵏ ⵓⵏⴳⵔⴰⵡ")
+            print("  setup-vscode     - ⵙⴱⴷⴷ ⵜⵉⴼⴰⵍⴰⵏⴳ ⴳ VSCode")
+            print("  setup-keyboard   - ⵙⴱⴷⴷ ⵜⴰⵙⵉⵍⴰ ⵏ ⵜⵉⴼⵉⵏⴰⵖ")
+            print("\nⵜⴰⵏⵎⵎⵉⵔⵜ!\n")
+            sys.exit(0)
         else:
             filename = cmd
             
