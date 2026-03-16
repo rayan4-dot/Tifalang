@@ -1,0 +1,26 @@
+{
+    "scopeName": "source.tifa",
+    "patterns": [
+        {
+            "name": "keyword.control.tifa",
+            "match": "\\b(ⵎⴰ|ⵎⴰⵢⴰ|ⵉⵎⴰ|ⴰⵡⵡ|ⵓⴳⴳ)\\b"
+        },
+        {
+            "name": "keyword.other.tifa",
+            "match": "\\b(ⵙⵙⵓⴼⵖ|ⵜⴰⵡⵓⵔⵉ)\\b"
+        },
+        {
+            "name": "string.quoted.double.tifa",
+            "begin": "\"",
+            "end": "\""
+        },
+        {
+            "name": "comment.line.number-sign.tifa",
+            "match": "#.*"
+        },
+        {
+            "name": "constant.numeric.tifa",
+            "match": "\\b\\d+\\b"
+        }
+    ]
+}

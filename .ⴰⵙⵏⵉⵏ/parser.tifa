@@ -1,0 +1,232 @@
+class ParserError(Exception):
+    pass
+
+class Parser:
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.pos = 0
+
+    def peek(self):
+        return self.tokens[self.pos]
+
+    def consume(self, expected_kind=None):
+        kind, value, line = self.tokens[self.pos]
+        if expected_kind and kind != expected_kind:
+            raise ParserError(f'Line {line}: Expected {expected_kind}, got {kind}')
+        self.pos += 1
+        return value, line
+
+    def parse(self):
+        stmts = []
+        while self.peek()[0] != 'EOF':
+            stmts.append(self.parse_statement())
+        return stmts
+
+    def parse_statement(self):
+        kind, _, line = self.peek()
+        if kind == 'PRINT':
+            self.consume('PRINT')
+            expr = self.parse_expression()
+            return ('print', expr, line)
+        elif kind == 'IF':
+            self.consume('IF')
+            cond = self.parse_expression()
+            self.consume('LBRACE')
+            if_body = self.parse_block()
+            self.consume('RBRACE')
+            else_body = []
+            if self.peek()[0] == 'ELSE':
+                self.consume('ELSE')
+                self.consume('LBRACE')
+                else_body = self.parse_block()
+                self.consume('RBRACE')
+            return ('if', cond, if_body, else_body, line)
+        elif kind == 'WHILE':
+            self.consume('WHILE')
+            cond = self.parse_expression()
+            self.consume('LBRACE')
+            body = self.parse_block()
+            self.consume('RBRACE')
+            return ('while', cond, body, line)
+        elif kind == 'FUNC':
+            self.consume('FUNC')
+            name, fn_line = self.consume('IDENT')
+            params = []
+            if self.peek()[0] == 'LPAREN':
+                self.consume('LPAREN')
+                if self.peek()[0] != 'RPAREN':
+                    params.append(self.consume('IDENT')[0])
+                    while self.peek()[0] == 'COMMA':
+                        self.consume('COMMA')
+                        params.append(self.consume('IDENT')[0])
+                self.consume('RPAREN')
+            self.consume('LBRACE')
+            body = self.parse_block()
+            self.consume('RBRACE')
+            return ('function', name, params, body, fn_line)
+        elif kind == 'IMPORT':
+            self.consume('IMPORT')
+            name, name_line = self.consume('IDENT')
+            alias = None
+            if self.peek()[0] == 'AS':
+                self.consume('AS')
+                alias, _ = self.consume('IDENT')
+            return ('import', name, alias, name_line)
+        elif kind == 'IDENT':
+            # Peek ahead to see if it's an assignment
+            name, id_line = self.consume('IDENT')
+            
+            # Case 1: Simple assignment name = expr
+            if self.peek()[0] == 'EQ':
+                self.consume('EQ')
+                expr = self.parse_expression()
+                return ('assign', name, expr, id_line)
+            
+            # Case 2: Indexed assignment name[key] = expr OR indexed access call name[key]()
+            elif self.peek()[0] == 'LBRACK':
+                # We need to distinguish name[key] = val from name[key]()
+                # For simplicity, we'll try to parse the index and then check for EQ
+                self.consume('LBRACK')
+                key = self.parse_expression()
+                self.consume('RBRACK')
+                
+                if self.peek()[0] == 'EQ':
+                    self.consume('EQ')
+                    val = self.parse_expression()
+                    return ('store_subscript', name, key, val, id_line)
+                else:
+                    # It was likely name[key]()... continue parsing as expression
+                    expr = ('binary_subscript', ('ident', name, id_line), key, id_line)
+                    # Now handle possible calls or more indexing in parse_primary's style
+                    while True:
+                        if self.peek()[0] == 'LPAREN':
+                            self.consume('LPAREN')
+                            args = []
+                            if self.peek()[0] != 'RPAREN':
+                                args.append(self.parse_expression())
+                                while self.peek()[0] == 'COMMA':
+                                    self.consume('COMMA')
+                                    args.append(self.parse_expression())
+                            self.consume('RPAREN')
+                            expr = ('call', expr, args, id_line)
+                        elif self.peek()[0] == 'LBRACK':
+                            self.consume('LBRACK')
+                            k = self.parse_expression()
+                            self.consume('RBRACK')
+                            expr = ('binary_subscript', expr, k, id_line)
+                        else:
+                            break
+                    return ('expr_stmt', expr, id_line)
+            
+            # Case 3: Just an expression starting with an identifier (like a function call)
+            else:
+                # Reset name and re-parse as expression for maximum correctness
+                self.pos -= 1 # Rewind name
+                expr = self.parse_expression()
+                return ('expr_stmt', expr, id_line)
+        else:
+            raise ParserError(f'Line {line}: Unexpected token {kind} in statement')
+
+    def parse_block(self):
+        stmts = []
+        while self.peek()[0] not in ('RBRACE', 'EOF'):
+            stmts.append(self.parse_statement())
+        return stmts
+
+    def parse_expression(self):
+        return self.parse_equality()
+
+    def parse_equality(self):
+        left = self.parse_term()
+        kind, _, _ = self.peek()
+        if kind in ('EQEQ', 'LT', 'GT'):
+            self.consume(kind)
+            right = self.parse_term()
+            line = left[2] if len(left) > 2 and isinstance(left, tuple) else 0
+            return ('binop', kind, left, right, line)
+        return left
+
+    def parse_term(self):
+        left = self.parse_factor()
+        while self.peek()[0] in ('PLUS', 'MINUS'):
+            kind, _, _ = self.peek()
+            self.consume(kind)
+            right = self.parse_factor()
+            line = left[2] if len(left) > 2 and isinstance(left, tuple) else 0
+            left = ('binop', kind, left, right, line)
+        return left
+
+    def parse_factor(self):
+        left = self.parse_primary()
+        while self.peek()[0] in ('MUL', 'DIV'):
+            kind, _, _ = self.peek()
+            self.consume(kind)
+            right = self.parse_primary()
+            line = left[2] if len(left) > 2 and isinstance(left, tuple) else 0
+            left = ('binop', kind, left, right, line)
+        return left
+
+    def parse_primary(self):
+        kind, val, line = self.peek()
+        if kind == 'NUMBER':
+            self.consume('NUMBER')
+            return ('number', val, line)
+        elif kind == 'STRING':
+            self.consume('STRING')
+            return ('string', val, line)
+        elif kind == 'IDENT':
+            name, id_line = self.consume('IDENT')
+            res = ('ident', name, id_line)
+            # Handle possible trailing access like name[key] or name()
+            while True:
+                if self.peek()[0] == 'LPAREN':
+                    self.consume('LPAREN')
+                    args = []
+                    if self.peek()[0] != 'RPAREN':
+                        args.append(self.parse_expression())
+                        while self.peek()[0] == 'COMMA':
+                            self.consume('COMMA')
+                            args.append(self.parse_expression())
+                    self.consume('RPAREN')
+                    res = ('call', name if isinstance(res, tuple) and res[0]=='ident' else res, args, id_line)
+                elif self.peek()[0] == 'LBRACK':
+                    self.consume('LBRACK')
+                    key = self.parse_expression()
+                    self.consume('RBRACK')
+                    res = ('binary_subscript', res, key, id_line)
+                else:
+                    break
+            return res
+        elif kind == 'LBRACK':
+            self.consume('LBRACK')
+            elements = []
+            if self.peek()[0] != 'RBRACK':
+                elements.append(self.parse_expression())
+                while self.peek()[0] == 'COMMA':
+                    self.consume('COMMA')
+                    elements.append(self.parse_expression())
+            self.consume('RBRACK')
+            return ('list', elements, line)
+        elif kind == 'LBRACE':
+            self.consume('LBRACE')
+            pairs = []
+            if self.peek()[0] != 'RBRACE':
+                k = self.parse_expression()
+                self.consume('COLON')
+                v = self.parse_expression()
+                pairs.append((k, v))
+                while self.peek()[0] == 'COMMA':
+                    self.consume('COMMA')
+                    k = self.parse_expression()
+                    self.consume('COLON')
+                    v = self.parse_expression()
+                    pairs.append((k, v))
+            self.consume('RBRACE')
+            return ('dict', pairs, line)
+        elif kind == 'LPAREN':
+            self.consume('LPAREN')
+            expr = self.parse_expression()
+            self.consume('RPAREN')
+            return expr
+        else:
+            raise ParserError(f'Line {line}: Unexpected token {kind} in expression')

@@ -1,0 +1,7 @@
+
+# Force GitHub to detect the project as TifaLang
+*.tifa linguist-language=TifaLang
+*.tifa -text
+
+# Ensure the binary is treated as a binary
+tifa binary

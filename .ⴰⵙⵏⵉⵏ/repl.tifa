@@ -1,0 +1,57 @@
+
+import sys
+try:
+    import readline
+except ImportError:
+    readline = None
+
+from lexer import lex
+from parser import Parser, ParserError
+from compiler import Compiler
+from vm import VM, VMRuntimeError
+
+def run_repl():
+    print("ⵜⵉⴼⴰⵍⴰⵏⴳ (TifaLang) v1.5")
+    print("ⴰⵔⴰ 'exit' ⵉ ⵜⵓⴼⴼⵖⴰ.")
+    vm = VM()
+    
+    import os
+    histfile = os.path.join(os.path.expanduser("~"), ".tifalang_history")
+    if readline:
+        try:
+            readline.read_history_file(histfile)
+        except FileNotFoundError:
+            pass
+        import atexit
+        atexit.register(readline.write_history_file, histfile)
+
+    while True:
+        try:
+            code = input("tifalang > ")
+            if code.strip() == "":
+                continue
+            if code.strip().lower() == "exit":
+                break
+                
+            tokens = lex(code)
+            parser = Parser(tokens)
+            stmts = parser.parse()
+            
+            compiler = Compiler()
+            for stmt in stmts:
+                compiler.compile(stmt)
+            bc, lm = compiler.get_bytecode()
+            
+            vm.run(bc, lm)
+        except ParserError as e:
+            print(f"SyntaxError: {e}", file=sys.stderr)
+        except VMRuntimeError as e:
+            print(f"RuntimeError: {e}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+        except KeyboardInterrupt:
+            print()
+            break
+        except EOFError:
+            print()
+            break

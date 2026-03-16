@@ -1,0 +1,229 @@
+
+import random
+import os
+import json
+import sys
+import urllib.request
+import pkgutil
+
+class VMRuntimeError(Exception):
+    def __init__(self, message, line=0):
+        super().__init__(message)
+        self.line = line
+
+class VM:
+    def __init__(self):
+        self.stack = []
+        self.env = {}
+        self.funcs = {}
+        self.builtins = {
+            'ⵜⵉⵖⵣⵉ': len,
+            'ⴰⵏⴰⵡ': lambda x: type(x).__name__,
+            'ⴰⴳⴰⵔ': lambda: random.random(),
+            'ⴰⵖⵔ': self._read_file,
+            'ⴰⵔⴰ': self._write_file,
+            'ⵉⵎⵙⴽⵉⵔⵏ': lambda: sys.argv[2:] if len(sys.argv) > 2 else [],
+            'ⵙⵙⵓⴼⵖ_ⴰⵎⵙⵏ': json.loads,
+            'ⵙⵙⵖⵔ_ⴰⵎⵙⵏ': json.dumps,
+            'ⴰⴳⴳ': self._http_get,
+            'ⵜⵉⴹⴰⴼ': self._trace,
+            'ⵜⴰⵙⵎⵓⵏⵉ': self._stack
+        }
+        self._ip = 0
+        self.debug_mode = "--debug" in sys.argv
+
+    def _do_call(self, fn, args, line, line_map):
+        if isinstance(fn, str):
+            if fn in self.builtins:
+                res = self.builtins[fn](*args)
+                self.stack.append(res)
+            elif fn in self.funcs:
+                params, f_code = self.funcs[fn]
+                old_env = self.env.copy()
+                for i in range(min(len(params), len(args))):
+                    self.env[params[i]] = args[i]
+                self.run(f_code, line_map)
+                self.env = old_env
+                self.stack.append(None)
+            else:
+                raise VMRuntimeError(f"Undefined function '{fn}'", line)
+        elif isinstance(fn, tuple) and len(fn) == 2:
+            params, f_code = fn
+            old_env = self.env.copy()
+            for i in range(min(len(params), len(args))):
+                self.env[params[i]] = args[i]
+            self.run(f_code, line_map)
+            self.env = old_env
+            self.stack.append(None)
+        else:
+            raise VMRuntimeError(f"Object {fn} is not callable", line)
+
+    def _trace(self):
+        print(f"DEBUG TRACE: IP={self._ip}")
+
+    def _stack(self):
+        print(f"DEBUG STACK: {self.stack}")
+
+    def _read_file(self, path):
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read()
+
+    def _write_file(self, path, content):
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(str(content))
+        return None
+
+    def _http_get(self, url):
+        with urllib.request.urlopen(url) as response:
+            return response.read().decode('utf-8')
+
+    def run(self, code, line_map=None):
+        if line_map is None:
+            line_map = {}
+            
+        ip = 0
+        while ip < len(code):
+            instr = code[ip]
+            current_line = line_map.get(ip, 0)
+            self._ip = ip
+            
+            if self.debug_mode:
+                print(f"[{current_line:3}] INSTR: {instr}")
+
+            ip += 1
+            op = instr[0]
+
+            try:
+                if op == 'LOAD_CONST':
+                    self.stack.append(instr[1])
+                elif op == 'POP':
+                    self.stack.pop()
+                elif op == 'BUILD_MAP':
+                    n = instr[1]
+                    d = {}
+                    pairs = []
+                    for _ in range(n):
+                        v = self.stack.pop()
+                        k = self.stack.pop()
+                        pairs.append((k, v))
+                    pairs.reverse()
+                    for k, v in pairs:
+                        d[k] = v
+                    self.stack.append(d)
+                elif op == 'BINARY_SUBSCRIPT':
+                    key = self.stack.pop(); obj = self.stack.pop()
+                    self.stack.append(obj[key])
+                elif op == 'STORE_SUBSCRIPT':
+                    name = instr[1]
+                    val = self.stack.pop(); key = self.stack.pop()
+                    if name in self.env and isinstance(self.env[name], dict):
+                        self.env[name][key] = val
+                    else:
+                        raise VMRuntimeError(f"Cannot perform indexed assignment on non-dictionary '{name}'", current_line)
+                elif op == 'LOAD_VAR':
+                    name = instr[1]
+                    if name in self.env:
+                        self.stack.append(self.env[name])
+                    elif name in self.funcs:
+                        self.run(self.funcs[name], line_map)
+                        self.stack.append(None)
+                    elif name in self.builtins:
+                        self.stack.append(('builtin', name))
+                    else:
+                        raise VMRuntimeError(f"Undefined variable '{name}'", current_line)
+                elif op == 'STORE_VAR':
+                    self.env[instr[1]] = self.stack.pop()
+                elif op == 'BUILD_LIST':
+                    n = instr[1]
+                    lst = [self.stack.pop() for _ in range(n)]
+                    lst.reverse()
+                    self.stack.append(lst)
+                elif op == 'BINARY_ADD':
+                    b = self.stack.pop(); a = self.stack.pop()
+                    self.stack.append(a + b)
+                elif op == 'BINARY_SUB':
+                    b = self.stack.pop(); a = self.stack.pop()
+                    self.stack.append(a - b)
+                elif op == 'BINARY_MUL':
+                    b = self.stack.pop(); a = self.stack.pop()
+                    self.stack.append(a * b)
+                elif op == 'BINARY_DIV':
+                    b = self.stack.pop(); a = self.stack.pop()
+                    self.stack.append(a / b)
+                elif op == 'BINARY_EQ':
+                    b = self.stack.pop(); a = self.stack.pop()
+                    self.stack.append(a == b)
+                elif op == 'BINARY_LT':
+                    b = self.stack.pop(); a = self.stack.pop()
+                    self.stack.append(a < b)
+                elif op == 'BINARY_GT':
+                    b = self.stack.pop(); a = self.stack.pop()
+                    self.stack.append(a > b)
+                elif op == 'PRINT':
+                    print(self.stack.pop())
+                elif op == 'JUMP':
+                    ip = instr[1]
+                elif op == 'JUMP_IF_FALSE':
+                    val = self.stack.pop()
+                    if not val:
+                        ip = instr[1]
+                elif op == 'STORE_FUNC':
+                    self.funcs[instr[1]] = (instr[2], instr[3])
+                elif op == 'CALL':
+                    name = instr[1]
+                    nargs = instr[2]
+                    args = [self.stack.pop() for _ in range(nargs)]
+                    args.reverse()
+                    self._do_call(name, args, current_line, line_map)
+                elif op == 'CALL_STACK':
+                    nargs = instr[1]
+                    args = [self.stack.pop() for _ in range(nargs)]
+                    args.reverse()
+                    fn_obj = self.stack.pop()
+                    self._do_call(fn_obj, args, current_line, line_map)
+                elif op == 'IMPORT':
+                    name = instr[1]
+                    alias = instr[2]
+                    
+                    m_code = None
+                    file_name = f"{name}.tifa"
+                    
+                    if os.path.exists(file_name):
+                        with open(file_name, 'r', encoding='utf-8') as f:
+                            m_code = f.read()
+                    else:
+                        sys_path = os.path.join("/usr/local/share/tifalang", file_name)
+                        if os.path.exists(sys_path):
+                            with open(sys_path, 'r', encoding='utf-8') as f:
+                                m_code = f.read()
+                        else:
+                            data = pkgutil.get_data('tifalang_std', file_name)
+                            if data:
+                                m_code = data.decode('utf-8')
+                    
+                    if m_code:
+                        from lexer import lex
+                        from parser import Parser
+                        from compiler import Compiler
+                        m_tokens = lex(m_code)
+                        m_ast = Parser(m_tokens).parse()
+                        m_compiler = Compiler()
+                        for s in m_ast: m_compiler.compile(s)
+                        m_bc, m_lm = m_compiler.get_bytecode()
+                        
+                        if alias:
+                            m_vm = VM()
+                            m_vm.run(m_bc, m_lm)
+                            module_dict = m_vm.env.copy()
+                            module_dict.update(m_vm.funcs)
+                            self.env[alias] = module_dict
+                        else:
+                            self.run(m_bc, m_lm)
+                    else:
+                        raise VMRuntimeError(f"Module '{name}' not found", current_line)
+                elif op == 'RETURN':
+                    return
+            except Exception as e:
+                if isinstance(e, VMRuntimeError):
+                    raise e
+                raise VMRuntimeError(f"{str(e)}", current_line)

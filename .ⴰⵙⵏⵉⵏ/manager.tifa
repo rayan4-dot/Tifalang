@@ -1,0 +1,30 @@
+import sys
+import os
+import urllib.request
+
+def install(package_name):
+    # This is a mock package manager for now.
+    # It would download from a registry.
+    print(f"Installing Tifalang package: {package_name}...")
+    
+    # Example mock: if package is 'ⵜⵓⵙⵏⴰⴽⵜ', download a mock math lib
+    if package_name == 'ⵜⵓⵙⵏⴰⴽⵜ':
+        content = """
+ⵜⴰⵡⵓⵔⵉ ⵙⵎⵔⵏ(ⴰ, ⴱ) {
+    ⵙⵙⵓⴼⵖ ⴰ + ⴱ
+}
+"""
+        with open("ⵜⵓⵙⵏⴰⴽⵜ.tifa", "w", encoding="utf-8") as f:
+            f.write(content)
+        print("Successfully installed 'ⵜⵓⵙⵏⴰⴽⵜ' library.")
+    else:
+        print(f"Error: Package '{package_name}' not found in registry.")
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "install":
+        if len(sys.argv) > 2:
+            install(sys.argv[2])
+        else:
+            print("Usage: tifa install <package_name>")
+    else:
+        print("Tifalang Package Manager v0.1")

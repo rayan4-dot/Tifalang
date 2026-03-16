@@ -1,0 +1,26 @@
+{
+    "name": "tifalang-vscode",
+    "displayName": "TifaLang Support",
+    "description": "Syntax highlighting and snippets for the TifaLang programming language.",
+    "version": "0.1.0",
+    "publisher": "tifalang",
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "tifalang",
+            "aliases": ["TifaLang", "tifa"],
+            "extensions": [".tifa"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "tifalang",
+            "scopeName": "source.tifa",
+            "path": "./syntaxes/tifalang.tmLanguage.json"
+        }]
+    }
+}

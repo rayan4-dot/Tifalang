@@ -1,0 +1,26 @@
+
+# ⛰️ TifaLang (ⵜⵉⴼⴰⵍⴰⵏⴳ) Repository Rules
+
+# Exclude ALL Python infrastructure
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Exclude OS-specific junk
+.DS_Store
+.vscode/
+.idea/
+
+# Exclude temporary build files
+build_staging/
+tifa_test/
+
+# Exclude local projects
+my_project/
+final_test_check/
+test_everywhere/
+test_proj/
+
+# Local logs
+*.log

@@ -1,0 +1,111 @@
+
+import sys
+import os
+import shutil
+import pkgutil
+from lexer import lex
+from parser import Parser, ParserError
+from compiler import Compiler
+from vm import VM, VMRuntimeError
+from repl import run_repl
+
+def run(code):
+    try:
+        tokens = lex(code)
+        parser = Parser(tokens)
+        stmts = parser.parse()
+        
+        compiler = Compiler()
+        for stmt in stmts:
+            compiler.compile(stmt)
+        
+        bytecode, line_map = compiler.get_bytecode()
+        
+        vm = VM()
+        vm.run(bytecode, line_map)
+    except ParserError as e:
+        print(f"SyntaxError: {e}", file=sys.stderr)
+        sys.exit(1)
+    except VMRuntimeError as e:
+        print(f"RuntimeError: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+def install_system():
+    """Universal Installer logic for any machine."""
+    target_bin = "/usr/local/bin/tifa"
+    target_share = "/usr/local/share/tifalang"
+    
+    print("\n⛰️  ⵜⴰⵡⵓⵔⵉ ⴰⵙⵏⵉⵏ (Establishing TifaLang Globally)...")
+    
+    try:
+        # 1. Ensure system share directory exists
+        if not os.path.exists(target_share):
+            os.makedirs(target_share, exist_ok=True)
+        
+        # 2. Extract internal libraries into system share
+        libs = ['ⴰⴼⴰⵢⵍⵓ.tifa', 'ⴰⵎⵣⵉⵔ.tifa', 'ⴰⵎⵙⵏ.tifa']
+        for lib in libs:
+            data = pkgutil.get_data('tifalang_std', lib)
+            if data:
+                with open(os.path.join(target_share, lib), 'wb') as f:
+                    f.write(data)
+                print(f"  ✓ {lib} distributed.")
+        
+        # 3. Copy the executable itself to system path
+        current_binary = os.path.realpath(sys.argv[0])
+        shutil.copy2(current_binary, target_bin)
+        os.chmod(target_bin, 0o755)
+        
+        print(f"\n✅ ⴰⵣⵓⵍ — TifaLang is now natively established!")
+        print(f"Location: {target_bin}")
+        print("You can now run 'tifa' from any path globally.\n")
+        sys.exit(0)
+    except PermissionError:
+        print("\n❌ Error: Permission denied. Please use: sudo tifa install")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n❌ Error during installation: {e}")
+        sys.exit(1)
+
+def run_cli():
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1]
+        
+        if cmd == 'install':
+            install_system()
+        elif cmd == 'new':
+            name = sys.argv[2] if len(sys.argv) > 2 else "ⵜⴰⴱⵔⴰⵜ"
+            print(f"Creating new TifaLang project: {name}...")
+            os.makedirs(name, exist_ok=True)
+            with open(os.path.join(name, "ⴰⵎⵣⵡⴰⵔⵓ.tifa"), "w", encoding="utf-8") as f:
+                f.write('## TifaLang Project\n\nⵙⵙⵓⴼⵖ "ⴰⵣⵓⵍ!"\n')
+            print(f"✓ {name} ⵉⴼⵓⵍⴽⵉ.")
+            sys.exit(0)
+        elif cmd == 'run':
+            if len(sys.argv) > 2:
+                filename = sys.argv[2]
+            else:
+                print("Usage: tifa run <filename.tifa>")
+                sys.exit(1)
+        else:
+            filename = cmd
+            
+        try:
+            if not os.path.exists(filename):
+                if not filename.endswith(".tifa") and os.path.exists(filename + ".tifa"):
+                    filename += ".tifa"
+                else:
+                    print(f"Error: File '{filename}' not found.", file=sys.stderr)
+                    sys.exit(1)
+            
+            with open(filename, 'r', encoding='utf-8') as f:
+                code = f.read()
+            run(code)
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        run_repl()

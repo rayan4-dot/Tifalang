@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE keyboard SYSTEM "file://localhost/System/Library/DTDs/KeyboardLayout.dtd">
+<keyboard group="126" id="5000" name="TifaLang Phonetic" max_index="0">
+    <layouts>
+        <layout first="0" last="1" mapset="0" modifiers="0" />
+    </layouts>
+    <modifierMap id="0" default_index="0">
+        <keyMapSelect index="0" />
+    </modifierMap>
+    <keyMapSet id="0">
+        <keyMap index="0">
+            <key code="0" output="ⴰ" /> <!-- a -->
+            <key code="1" output="ⵙ" /> <!-- s -->
+            <key code="2" output="ⴷ" /> <!-- d -->
+            <key code="3" output="ⴼ" /> <!-- f -->
+            <key code="4" output="ⴳ" /> <!-- g -->
+            <key code="5" output="ⵃ" /> <!-- h -->
+            <key code="11" output="ⴱ" /> <!-- b -->
+            <key code="12" output="ⵇ" /> <!-- q -->
+            <key code="13" output="ⵡ" /> <!-- w -->
+            <key code="14" output="ⴻ" /> <!-- e -->
+            <key code="15" output="ⵔ" /> <!-- r -->
+            <key code="17" output="ⵜ" /> <!-- t -->
+            <key code="31" output="ⵉ" /> <!-- i -->
+            <key code="32" output="ⵓ" /> <!-- u -->
+            <key code="34" output="ⵉ" /> <!-- i (repeated for convenience) -->
+            <key code="35" output="ⴱ" /> <!-- p -> b -->
+            <key code="37" output="ⵍ" /> <!-- l -->
+            <key code="38" output="ⵊ" /> <!-- j -->
+            <key code="40" output="ⴽ" /> <!-- k -->
+            <key code="45" output="ⵏ" /> <!-- n -->
+            <key code="46" output="ⵎ" /> <!-- m -->
+        </keyMap>
+    </keyMapSet>
+</keyboard>
+
