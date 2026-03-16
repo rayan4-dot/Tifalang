@@ -3,6 +3,7 @@ import sys
 import os
 import shutil
 import pkgutil
+import subprocess
 from lexer import lex
 from parser import Parser, ParserError
 from compiler import Compiler
@@ -76,18 +77,53 @@ def show_status():
     share = "/usr/local/share/tifalang"
     if os.path.exists(share):
         print(f"Libraries: {share}")
-        for f in os.listdir(share):
+        for f in sorted(os.listdir(share)):
             print(f"  - {f}")
     else:
         print("Libraries: Not found (Run 'tifa install')")
     
-    # Check VSCode
     vscode_ext = os.path.expanduser("~/.vscode/extensions")
-    if os.path.exists(vscode_ext) and any("tifalang" in d.lower() for d in os.listdir(vscode_ext)):
-        print("VSCode Extension: Installed ✅")
-    else:
-        print("VSCode Extension: Not installed (Run 'tifa setup-vscode')")
+    found_vs = False
+    if os.path.exists(vscode_ext):
+        if any("tifalang" in d.lower() for d in os.listdir(vscode_ext)):
+             found_vs = True
+    
+    print(f"VSCode Extension: {'Installed ✅' if found_vs else 'Not installed (Run tifa setup-vscode)'}")
     print("-" * 40 + "\n")
+
+def setup_vscode():
+    print("🎨 Establishing TifaLang in VSCode...")
+    try:
+        home = os.path.expanduser("~")
+        vscode_ext_dir = os.path.join(home, ".vscode", "extensions", "tifalang-vscode")
+        
+        cwd = os.getcwd()
+        source_dir = os.path.join(cwd, "tifalang-vscode")
+        if not os.path.exists(source_dir):
+            print("❌ Error: VSCode source not found in current directory.")
+            print(f"Looked in: {source_dir}")
+            return
+
+        if os.path.exists(vscode_ext_dir):
+            shutil.rmtree(vscode_ext_dir)
+        
+        shutil.copytree(source_dir, vscode_ext_dir)
+        print("✅ VSCode Extension established. Please restart VSCode.")
+    except Exception as e:
+        print(f"❌ Error setting up VSCode: {e}")
+
+def setup_keyboard():
+    print("⌨️  Establishing Tifinagh Keyboard Support...")
+    keylayout = "TifaLang.keylayout"
+    if os.path.exists(keylayout):
+        print(f"Opening {keylayout}...")
+        print("Please move this file to: /Library/Keyboard Layouts/")
+        try:
+            subprocess.run(["open", keylayout])
+        except:
+            pass
+    else:
+        print("❌ Error: TifaLang.keylayout not found.")
 
 def run_cli():
     if len(sys.argv) > 1:
@@ -95,8 +131,16 @@ def run_cli():
         
         if cmd == 'install':
             install_system()
+            sys.exit(0)
         elif cmd == 'status':
             show_status()
+            sys.exit(0)
+        elif cmd == 'setup-vscode':
+            setup_vscode()
+            sys.exit(0)
+        elif cmd == 'setup-keyboard':
+            setup_keyboard()
+            sys.exit(0)
         elif cmd == 'new':
             name = sys.argv[2] if len(sys.argv) > 2 else "ⵜⴰⴱⵔⴰⵜ"
             print(f"Creating new project: {name}...")
@@ -111,7 +155,7 @@ def run_cli():
             else:
                 print("Usage: tifa run <file.tifa>")
                 sys.exit(1)
-        elif cmd == 'help' or cmd == '--help' or cmd == '-h':
+        elif cmd in ['help', '--help', '-h']:
             print("\n⛰️  ⵜⵉⴼⴰⵍⴰⵏⴳ (TifaLang) Ecosystem Commands:")
             print("  run <file.tifa>   - ⵙⵙⵍⴽⵎ ⴰⴼⴰⵢⵍⵓ")
             print("  new <name>       - ⵙⴽⵔ ⴰⵙⵏⵙⵉ ⴰⵎⴰⵢⵏⵓ")
