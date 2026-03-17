@@ -1,0 +1,163 @@
+:root {
+    --bg-color: #0d0f14;
+    --container-bg: rgba(23, 27, 34, 0.7);
+    --accent-blue: #00d2ff;
+    --accent-yellow: #fdd835;
+    --accent-green: #4caf50;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Noto Sans Tifinagh', -apple-system, sans-serif;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(circle at 50% -20%, #1a2a44, var(--bg-color));
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.glass-container {
+    width: 95%;
+    max-width: 1200px;
+    height: 90vh;
+    background: var(--container-bg);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+}
+
+header {
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-right: 20px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-dot.active {
+    background-color: var(--accent-green);
+    box-shadow: 0 0 10px var(--accent-green);
+}
+
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--glass-border);
+}
+
+.editor-section, .output-section {
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar {
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 20px;
+    color: var(--accent-yellow);
+    font-family: 'Noto Sans Tifinagh', monospace;
+    font-size: 18px;
+    resize: none;
+    outline: none;
+}
+
+.terminal-view {
+    flex: 1;
+    padding: 20px;
+    font-family: monospace;
+    font-size: 16px;
+    color: var(--accent-blue);
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+#run-btn {
+    background: var(--accent-green);
+    color: white;
+}
+
+#run-btn:hover {
+    transform: scale(1.05);
+}
+
+#clear-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--glass-border);
+}
+
+footer {
+    padding: 15px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--glass-border);
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--glass-border);
+    border-radius: 10px;
+}

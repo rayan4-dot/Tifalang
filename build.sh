@@ -1,19 +1,19 @@
 #!/bin/bash
 # ⴰⵣⵓⵍ — TifaLang Stealth Build Script
-# This bundles the engine into a 'tifa' binary without exposing the source as Python.
+# This bundles the entire ecosystem into a unified 'tifa' binary.
 
 set -e
 
 STAGING="build_staging"
 
-echo "⛰️  Starting Stealth Build..."
+echo "⛰️  Starting Unified Stealth Build..."
 
 # 1. Create staging area
 rm -rf "$STAGING"
 mkdir -p "$STAGING/tifalang_std"
 
-# 2. Copy .tifa source files from .ⴰⵙⵏⵉⵏ and rename to .py in staging
-echo "📦 Establishing source foundations..."
+# 2. Copy .tifa engine files
+echo "📦 Establishing engine foundations..."
 for f in .ⴰⵙⵏⵉⵏ/*.tifa; do
     base=$(basename "$f" .tifa)
     cp "$f" "$STAGING/${base}.py"
@@ -23,10 +23,11 @@ done
 cp tifalang_std/*.tifa "$STAGING/tifalang_std/"
 touch "$STAGING/tifalang_std/__init__.py"
 
-# --- BUNDLE ASSETS (Massive Ecosystem) ---
-echo "💎 Bundling Ecosystem Assets (VSCode, Keyboard)..."
+# --- BUNDLE MASSIVE ECOSYSTEM ASSETS ---
+echo "💎 Bundling Ecosystem Assets..."
 cp -r tifalang-vscode "$STAGING/"
 cp TifaLang.keylayout "$STAGING/"
+cp -r playground "$STAGING/"
 # -----------------------------------------
 
 # 4. Create entry point
@@ -44,5 +45,5 @@ chmod +x tifa
 # 6. Cleanup
 rm -rf "$STAGING"
 
-echo "✅ ⴰⵣⵓⵍ! Unified 'tifa' binary created successfully."
-echo "Ecosystem is now self-contained within the binary."
+echo "✅ ⴰⵣⵓⵍ! Unified 'tifa' binary created successfully (v1.8.0)."
+echo "Includes: Engine, Libs, VSCode, Keyboard, and Web Playground."

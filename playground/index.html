@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ber">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⛰️ TifaLang Playground — ⴰⴱⵔⵔⴰⵃ</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tifinagh&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="glass-container">
+        <header>
+            <div class="logo">⛰️ ⵜⵉⴼⴰⵍⴰⵏⴳ</div>
+            <nav>
+                <a href="https://github.com/rayan4-dot/Tifalang" target="_blank">GitHub</a>
+                <span class="status-dot active"></span> <span>Online</span>
+            </nav>
+        </header>
+
+        <main>
+            <div class="editor-section">
+                <div class="toolbar">
+                    <span>ⴰⵎⵣⵡⴰⵔⵓ.tifa</span>
+                    <button id="run-btn" class="glow-on-hover">ⵙⵙⵍⴽⵎ (RUN)</button>
+                </div>
+                <textarea id="editor" spellcheck="false" placeholder="ⵙⵙⵓⴼⵖ 'ⴰⵣⵓⵍ!'"></textarea>
+            </div>
+
+            <div class="output-section">
+                <div class="toolbar">
+                    <span>ⴰⵙⵙⵓⴼⵖ (OUTPUT)</span>
+                    <button id="clear-btn">ⵕⵥ (CLEAR)</button>
+                </div>
+                <div id="output" class="terminal-view"></div>
+            </div>
+        </main>
+
+        <footer>
+            <p>ⴰⵣⵓⵍ — TifaLang Browser Playground v1.0 | Built with Pyodide ⛰️</p>
+        </footer>
+    </div>
+    <script src="playground.js"></script>
+</body>
+</html>
