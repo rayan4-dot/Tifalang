@@ -46,4 +46,4 @@ TifaLang is open-source. To build the platform from source, clone the repo and u
 ```
 
 ## 📜 License
-MIT
+Rayan El Guerdaoui
