@@ -124,6 +124,9 @@ class Parser:
                 self.pos -= 1 # Rewind name
                 expr = self.parse_expression()
                 return ('expr_stmt', expr, id_line)
+        elif kind in ('NUMBER', 'STRING', 'LBRACK', 'LBRACE', 'LPAREN'):
+            expr = self.parse_expression()
+            return ('expr_stmt', expr, line)
         else:
             raise ParserError(f'Line {line}: Unexpected token {kind} in statement')
 

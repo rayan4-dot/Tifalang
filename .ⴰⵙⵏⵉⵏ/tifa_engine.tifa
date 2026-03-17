@@ -4,13 +4,26 @@ import os
 import shutil
 import pkgutil
 import subprocess
+import zipfile
 from lexer import lex
 from parser import Parser, ParserError
 from compiler import Compiler
 from vm import VM, VMRuntimeError
 from repl import run_repl
 
-VERSION = "1.6.5"
+VERSION = "1.7.5"
+
+def get_input(prompt):
+    """Force interactive input from the terminal."""
+    try:
+        # Use /dev/tty to bypass stdin pipe
+        with open('/dev/tty', 'r') as tty_in:
+            with open('/dev/tty', 'w') as tty_out:
+                tty_out.write(prompt)
+                tty_out.flush()
+                return tty_in.readline().strip()
+    except:
+        return input(prompt).strip()
 
 def run(code):
     try:
@@ -37,38 +50,56 @@ def run(code):
         sys.exit(1)
 
 def show_dashboard():
-    print("\n" + "="*50)
+    print("\n" + "="*53)
     print("      ⛰️  ⵜⵉⴼⴰⵍⴰⵏⴳ (Tifalang) Ecosystem Dashboard")
-    print("="*50)
+    print("="*53)
     print("\nAvailable Components:")
     print("  [1] Runtime Engine      (ⵜⴰⵔⴰⵎⵜ-ⵜⴰⵎⵙⵏⴰⵡⵜ)    ✓ Active")
     print("  [2] Standard Libraries  (ⵜⵉⵙⴷⵍⵉⵙⵉⵏ)           ✓ Established")
+    
+    # Check VSCode
+    vscode_ext = os.path.expanduser("~/.vscode/extensions")
+    found_vs = False
+    if os.path.exists(vscode_ext):
+        if any("tifalang" in d.lower() for d in os.listdir(vscode_ext)):
+             found_vs = True
+    print(f"  [4] VSCode Extension    (ⵜⵉⴼⴰⵍⴰⵏⴳ VSCode)     {'✓ Installed' if found_vs else '● Ready'}")
     print("  [3] Keyboard Layout     (ⵜⴰⵙⵉⵍⴰ ⵏ ⵜⵉⴼⵉⵏⴰⵖ)    ● Ready")
-    print("  [4] VSCode Extension    (ⵜⵉⴼⴰⵍⴰⵏⴳ VSCode)     ● Ready")
     print("  [5] Playground          (ⴰⴱⵔⵔⴰⵃ)             ● Online")
     print("  [6] Example Projects    (ⵉⵙⵏⴼⴰⵔⵏ)             ✓ Included")
     
     print("\nCommands:")
     print("  tifa run <file>   - ⵙⵙⵍⴽⵎ ⴰⴼⴰⵢⵍⵓ")
-    print("  tifa new <name>   - ⵙⴽⵔ ⴰⵙⵏⵙⵉ ⴰⵎⴰⵢⵏⵓ")
     print("  tifa status       - ⵥⵔ ⴰⴷⴷⴰⴷ ⵏ ⵓⵏⴳⵔⴰⵡ")
     print("  tifa setup-vscode - ⵙⴱⴷⴷ VSCode Extension")
     print("  tifa setup-keys   - ⵙⴱⴷⴷ ⵜⴰⵙⵉⵍⴰ ⵏ ⵜⵉⴼⵉⵏⴰⵖ")
     
     print("\nⴰⵣⵓⵍ — ⵜⵉⴼⴰⵍⴰⵏⴳ ⴰⵙⵏⵉⵏ ⴰⵎⴰⵣⵉⵖ ✅")
-    print("="*50 + "\n")
+    print("="*53 + "\n")
 
 def install_system():
-    """Interactive Global Installer."""
+    """Universal Interactive Installer."""
     target_bin = "/usr/local/bin/tifa"
     target_share = "/usr/local/share/tifalang"
     
     print("\n⛰️  ⴰⵣⵓⵍ — TifaLang Ecosystem Installer")
-    print("----------------------------------------")
+    print("-" * 40)
+    print("Choose installation mode:")
+    print("  [1] ⵙⴱⴷⴷ ⴽⵓⵍⵍⵓ (Install Everything Automatically)")
+    print("  [2] ⴰⵙⵜⴰⵢ (Custom Setup)")
+    
+    user_choice = get_input("\nⴰⵙⵜⴰⵢ [1/2]: ")
+    install_all = (user_choice == '1')
     
     try:
         if not os.path.exists(target_share):
             os.makedirs(target_share, exist_ok=True)
+        
+        print("\nⴰⵙⵏⵉⵏ ⴰⵎⵙⵏⴰⵡ (Establishing Runtime)...")
+        current_binary = os.path.realpath(sys.argv[0])
+        shutil.copy2(current_binary, target_bin)
+        os.chmod(target_bin, 0o755)
+        print("  ✓ tifa command established.")
         
         print("ⴰⵙⵏⵉⵏ ⴰⴷⵓⵙ (Establishing Libraries)...")
         libs = ['ⴰⴼⴰⵢⵍⵓ.tifa', 'ⴰⵎⵣⵉⵔ.tifa', 'ⴰⵎⵙⵏ.tifa']
@@ -78,22 +109,101 @@ def install_system():
                 with open(os.path.join(target_share, lib), 'wb') as f:
                     f.write(data)
                 print(f"  ✓ {lib} distributed.")
-        
-        print("ⴰⵙⵏⵉⵏ ⴰⵎⵙⵏⴰⵡ (Establishing Runtime)...")
-        current_binary = os.path.realpath(sys.argv[0])
-        shutil.copy2(current_binary, target_bin)
-        os.chmod(target_bin, 0o755)
-        print("  ✓ tifa command established.")
-        
-        # Ecosystem display after install
-        show_dashboard()
-        sys.exit(0)
     except PermissionError:
         print("\n❌ Error: Permission denied. Use: sudo tifa install")
         sys.exit(1)
+
+    # Secondary selections
+    if install_all or get_input("ⵙⴱⴷⴷ VSCode Extension? [ⵢ/ⵏ]: ").lower() in ['y', 'ⵢ']:
+        setup_vscode()
+    
+    if install_all or get_input("ⵙⴱⴷⴷ ⵜⴰⵙⵉⵍⴰ ⵏ ⵜⵉⴼⵉⵏⴰⵖ? [ⵢ/ⵏ]: ").lower() in ['y', 'ⵢ']:
+        setup_keyboard()
+        
+    print("\n✅ ⴰⵣⵓⵍ — TifaLang is now natively established!")
+    show_dashboard()
+    sys.exit(0)
+
+def setup_vscode():
+    print("🎨 Establishing TifaLang in VSCode...")
+    try:
+        home = os.path.expanduser("~")
+        dest = os.path.join(home, ".vscode", "extensions", "tifalang-vscode")
+        binary = sys.argv[0]
+        
+        if zipfile.is_zipfile(binary):
+            with zipfile.ZipFile(binary, 'r') as z:
+                # Extract only tifalang-vscode folder
+                for file in z.namelist():
+                    if file.startswith('tifalang-vscode/'):
+                        z.extract(file, os.path.join(home, ".vscode", "extensions"))
+            print("  ✓ VSCode Extension extracted from binary.")
+        else:
+            # Fallback to local copy
+            source = os.path.join(os.getcwd(), "tifalang-vscode")
+            if os.path.exists(source):
+                if os.path.exists(dest): shutil.rmtree(dest)
+                shutil.copytree(source, dest)
+                print("  ✓ VSCode Extension established from local source.")
     except Exception as e:
-        print(f"\n❌ Error: {e}")
-        sys.exit(1)
+        print(f"  ⚠ VSCode Error: {e}")
+
+def setup_keyboard():
+    print("⌨️  Establishing Tifinagh Keyboard Layout...")
+    try:
+        binary = sys.argv[0]
+        kfile = "TifaLang.keylayout"
+        dest = os.path.expanduser("~/Desktop/TifaLang.keylayout")
+        
+        if zipfile.is_zipfile(binary):
+            with zipfile.ZipFile(binary, 'r') as z:
+                if kfile in z.namelist():
+                    z.extract(kfile, os.path.expanduser("~/Desktop"))
+                    print(f"  ✓ Keyboard layout extracted to your Desktop.")
+                    subprocess.run(["open", dest])
+        else:
+            if os.path.exists(kfile):
+                print("  ✓ Local keyboard layout found. Opening...")
+                subprocess.run(["open", kfile])
+    except Exception as e:
+        print(f"  ⚠ Keyboard Error: {e}")
+
+def run_cli():
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1]
+        
+        if cmd == 'install':
+            install_system()
+        elif cmd == 'status':
+            show_status()
+        elif cmd == 'setup-vscode':
+            setup_vscode()
+            sys.exit(0)
+        elif cmd == 'setup-keys' or cmd == 'setup-keyboard':
+            setup_keyboard()
+            sys.exit(0)
+        elif cmd == 'dashboard' or cmd == 'help' or cmd == '--help':
+            show_dashboard()
+            sys.exit(0)
+        elif cmd == 'new':
+            name = sys.argv[2] if len(sys.argv) > 2 else "ⵜⴰⴱⵔⴰⵜ"
+            os.makedirs(name, exist_ok=True)
+            with open(os.path.join(name, "ⴰⵎⵣⵡⴰⵔⵓ.tifa"), "w", encoding="utf-8") as f:
+                f.write('ⵙⵙⵓⴼⵖ "ⴰⵣⵓⵍ!"\n')
+            print(f"✓ {name} ⵉⴼⵓⵍⴽⵉ.")
+            sys.exit(0)
+        else:
+            filename = cmd
+            try:
+                if not os.path.exists(filename) and os.path.exists(filename + ".tifa"):
+                    filename += ".tifa"
+                with open(filename, 'r', encoding='utf-8') as f:
+                    run(f.read())
+            except Exception as e:
+                print(f"Error: {e}", file=sys.stderr)
+                sys.exit(1)
+    else:
+        run_repl()
 
 def show_status():
     print(f"\n⛰️  TifaLang Ecosystem Status (v{VERSION})")
@@ -110,88 +220,8 @@ def show_status():
     if os.path.exists(vscode_ext):
         if any("tifalang" in d.lower() for d in os.listdir(vscode_ext)):
              found_vs = True
-    
-    print(f"VSCode Extension: {'Installed ✅' if found_vs else 'Not installed (tifa setup-vscode)'}")
+    print(f"VSCode Extension: {'Installed ✅' if found_vs else 'Not installed'}")
     print("-" * 40 + "\n")
-
-def setup_vscode():
-    print("🎨 Establishing TifaLang in VSCode...")
-    try:
-        home = os.path.expanduser("~")
-        vscode_ext_dir = os.path.join(home, ".vscode", "extensions", "tifalang-vscode")
-        
-        # We try to find it in current project folder
-        cwd = os.getcwd()
-        source_dir = os.path.join(cwd, "tifalang-vscode")
-        if not os.path.exists(source_dir):
-            print("❌ Error: VSCode source not found locally.")
-            return
-
-        if os.path.exists(vscode_ext_dir): shutil.rmtree(vscode_ext_dir)
-        shutil.copytree(source_dir, vscode_ext_dir)
-        print("✅ VSCode Extension established (✓).")
-    except Exception as e:
-        print(f"❌ Error: {e}")
-
-def setup_keyboard():
-    print("⌨️  Establishing Tifinagh Keyboard Layout...")
-    keylayout = "TifaLang.keylayout"
-    if os.path.exists(keylayout):
-        print("✓ Keyboard detected.")
-        print("Moving to system layouts...")
-        # On Mac, system layout is in /Library/Keyboard Layouts/
-        try:
-            subprocess.run(["open", keylayout])
-            print("✅ Keyboard layout opened (✓).")
-        except:
-            print("Please drag the file to /Library/Keyboard Layouts/")
-    else:
-        print("❌ Error: TifaLang.keylayout not found.")
-
-def run_cli():
-    if len(sys.argv) > 1:
-        cmd = sys.argv[1]
-        
-        if cmd == 'install':
-            install_system()
-        elif cmd == 'status':
-            show_status()
-        elif cmd == 'setup-vscode':
-            setup_vscode()
-        elif cmd == 'setup-keys' or cmd == 'setup-keyboard':
-            setup_keyboard()
-        elif cmd == 'dashboard':
-            show_dashboard()
-        elif cmd == 'new':
-            name = sys.argv[2] if len(sys.argv) > 2 else "ⵜⴰⴱⵔⴰⵜ"
-            print(f"Creating project: {name}...")
-            os.makedirs(name, exist_ok=True)
-            with open(os.path.join(name, "ⴰⵎⵣⵡⴰⵔⵓ.tifa"), "w", encoding="utf-8") as f:
-                f.write('## TifaLang Project\n\nⵙⵙⵓⴼⵖ "ⴰⵣⵓⵍ!"\n')
-            print(f"✓ {name} ⵉⴼⵓⵍⴽⵉ.")
-        elif cmd == 'run':
-            if len(sys.argv) > 2:
-                filename = sys.argv[2]
-                try:
-                    with open(filename, 'r', encoding='utf-8') as f:
-                        run(f.read())
-                except Exception as e:
-                    print(f"Error: {e}", file=sys.stderr)
-            else:
-                print("Usage: tifa run <file>")
-        elif cmd in ['help', '--help', '-h']:
-            show_dashboard()
-        else:
-            filename = cmd
-            try:
-                if not os.path.exists(filename) and os.path.exists(filename + ".tifa"):
-                    filename += ".tifa"
-                with open(filename, 'r', encoding='utf-8') as f:
-                    run(f.read())
-            except Exception as e:
-                print(f"Error: {e}", file=sys.stderr)
-    else:
-        run_repl()
 
 if __name__ == "__main__":
     run_cli()

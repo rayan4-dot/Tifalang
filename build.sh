@@ -23,6 +23,12 @@ done
 cp tifalang_std/*.tifa "$STAGING/tifalang_std/"
 touch "$STAGING/tifalang_std/__init__.py"
 
+# --- BUNDLE ASSETS (Massive Ecosystem) ---
+echo "💎 Bundling Ecosystem Assets (VSCode, Keyboard)..."
+cp -r tifalang-vscode "$STAGING/"
+cp TifaLang.keylayout "$STAGING/"
+# -----------------------------------------
+
 # 4. Create entry point
 cat > "$STAGING/__main__.py" <<EOF
 import tifa_engine
@@ -31,12 +37,12 @@ if __name__ == '__main__':
 EOF
 
 # 5. Bundle with zipapp
-echo "🚀 Bundling TifaLang binary..."
+echo "🚀 Bundling Unified TifaLang binary..."
 python3 -m zipapp "$STAGING" -o tifa -p "/usr/bin/env python3"
 chmod +x tifa
 
 # 6. Cleanup
 rm -rf "$STAGING"
 
-echo "✅ ⴰⵣⵓⵍ! 'tifa' binary created successfully."
-echo "Your source tree remains empty of .py files and __pycache__."
+echo "✅ ⴰⵣⵓⵍ! Unified 'tifa' binary created successfully."
+echo "Ecosystem is now self-contained within the binary."
