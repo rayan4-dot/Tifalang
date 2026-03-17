@@ -20,7 +20,6 @@ cecho() {
     bold="$2"
     msg="$3"
     if [ "$HAS_COLOR" = true ]; then
-        # Use printf for maximum compatibility across shells (zsh/bash/sh)
         printf "${color}${bold}${msg}${NC}\n"
     else
         printf "${msg}\n"
@@ -41,10 +40,8 @@ curl -fsSL "https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/${BRAN
 chmod +x ./tifa-install
 
 printf "🛡️  Establishing TifaLang in system paths...\n"
+# Pass control to the interactive binary installer
 sudo ./tifa-install install
 
 rm ./tifa-install
-
 printf "\n"
-cecho "$GREEN" "$BOLD" "✓ ⴰⵣⵓⵍ! TifaLang is now natively installed on this laptop."
-printf "Run it anywhere by simply typing: tifa\n"
