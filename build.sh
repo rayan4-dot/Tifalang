@@ -46,3 +46,18 @@ cp -r playground "$STAGING/"
 
 # 4. Create entry point
 cat > "$STAGING/__main__.py" <<EOF
+import tifa_engine
+if __name__ == '__main__':
+    tifa_engine.run_cli()
+EOF
+
+# 5. Bundle with zipapp
+echo "🚀 Bundling Unified TifaLang binary..."
+python3 -m zipapp "$STAGING" -o tifa -p "/usr/bin/env python3"
+chmod +x tifa
+
+# 6. Cleanup
+rm -rf "$STAGING"
+
+echo "✅ ⴰⵣⵓⵍ! Unified 'tifa' binary created successfully (v1.8.0)."
+echo "Includes: Engine, Libs, VSCode, Keyboard, and Web Playground."
