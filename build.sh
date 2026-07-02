@@ -23,6 +23,20 @@ done
 cp tifalang_std/*.tifa "$STAGING/tifalang_std/"
 touch "$STAGING/tifalang_std/__init__.py"
 
+# 3.5 Sync engine files to playground/engine for Pyodide integration
+echo "📦 Syncing playground engine..."
+mkdir -p playground/engine
+for f in .ⴰⵙⵏⵉⵏ/*.tifa; do
+    base=$(basename "$f" .tifa)
+    cp "$f" "playground/engine/${base}.py"
+done
+cp tifalang_std/*.tifa playground/engine/
+
+# 3.6 Run the playground packager
+echo "⚙️ Packaging playground assets..."
+python3 playground/bundle.py
+
+
 # --- BUNDLE MASSIVE ECOSYSTEM ASSETS ---
 echo "💎 Bundling Ecosystem Assets..."
 cp -r tifalang-vscode "$STAGING/"
